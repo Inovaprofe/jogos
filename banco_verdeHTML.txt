@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Banco Verde Global</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #e6f7e8;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        #game-container {
+            background-color: #ffffff;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            text-align: center;
+            max-width: 800px;
+            width: 100%;
+        }
+        h1 {
+            color: #2c7e3a;
+        }
+        #board {
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        .space {
+            border: 1px solid #000;
+            padding: 10px;
+            font-size: 12px;
+            background-color: #f0f8ff;
+        }
+        .btn {
+            background-color: #4CAF50;
+            border: none;
+            color: white;
+            padding: 10px 20px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 16px;
+            margin: 4px 2px;
+            cursor: pointer;
+            border-radius: 5px;
+            transition: background-color 0.3s;
+        }
+        .btn:hover {
+            background-color: #45a049;
+        }
+        #player-info {
+            display: flex;
+            justify-content: space-around;
+            margin-bottom: 20px;
+        }
+        #dice-result, #card-result {
+            font-weight: bold;
+            margin: 10px 0;
+        }
+        #property-info, #card-info {
+            margin-top: 20px;
+            text-align: left;
+        }
+    </style>
+</head>
+<body>
+    <div id="game-container">
+        <h1>Banco Verde Global</h1>
+        <div id="player-info">
+            <div>Jogador 1: <span id="player1-credits">1000</span> Créditos de Carbono</div>
+            <div>Jogador 2: <span id="player2-credits">1000</span> Créditos de Carbono</div>
+        </div>
+        <div id="board"></div>
+        <button id="roll-dice" class="btn">Lançar Dados</button>
+        <div id="dice-result"></div>
+        <div id="property-info"></div>
+        <div id="card-info"></div>
+        <button id="end-turn" class="btn" style="display: none;">Encerrar Turno</button>
+    </div>
+
+    <script>
+        const properties = [
+            { name: "Acordo de Paris", price: 200, info: "Tratado internacional sobre mudanças climáticas." },
+            { name: "COP26", price: 150, info: "Conferência das Nações Unidas sobre Mudanças Climáticas de 2021." },
+            { name: "Protocolo de Quioto", price: 180, info: "Tratado internacional para redução da emissão de gases de efeito estufa." },
+            { name: "Energia Solar", price: 220, info: "Fonte de energia renovável e limpa." },
+            { name: "Energia Eólica", price: 220, info: "Energia obtida a partir da força dos ventos." },
+            { name: "Reflorestamento", price: 160, info: "Plantio de árvores em áreas desmatadas." },
+            { name: "Reciclagem", price: 140, info: "Processo de transformação de materiais usados em novos produtos." },
+            { name: "Transporte Sustentável", price: 200, info: "Meios de transporte com baixa emissão de carbono." },
+            { name: "Agricultura Sustentável", price: 180, info: "Práticas agrícolas que preservam o meio ambiente." },
+            { name: "Construção Verde", price: 240, info: "Edifícios projetados para serem ambientalmente responsáveis." }
+        ];
+
+        const cards = [
+            { type: "sorte", text: "Sua empresa investiu em energia limpa. Ganhe 50 Créditos de Carbono.", effect: 50 },
+            { type: "revés", text: "Vazamento de óleo detectado. Pague 100 Créditos de Carbono para limpeza.", effect: -100 },
+            { type: "sorte", text: "Você implementou um programa de reciclagem eficiente. Ganhe 75 Créditos de Carbono.", effect: 75 },
+            { type: "revés", text: "Multa por desmatamento ilegal. Pague 150 Créditos de Carbono.", effect: -150 },
+            { type: "sorte", text: "Sua cidade ganhou um prêmio de sustentabilidade. Ganhe 100 Créditos de Carbono.", effect: 100 }
+        ];
+
+        let currentPlayer = 1;
+        let player1Credits = 1000;
+        let player2Credits = 1000;
+        let player1Position = 0;
+        let player2Position = 0;
+
+        const boardEl = document.getElementById('board');
+        const rollDiceBtn = document.getElementById('roll-dice');
+        const diceResultEl = document.getElementById('dice-result');
+        const propertyInfoEl = document.getElementById('property-info');
+        const cardInfoEl = document.getElementById('card-info');
+        const endTurnBtn = document.getElementById('end-turn');
+        const player1CreditsEl = document.getElementById('player1-credits');
+        const player2CreditsEl = document.getElementById('player2-credits');
+
+        function createBoard() {
+            for (let i = 0; i < 12; i++) {
+                const spaceEl = document.createElement('div');
+                spaceEl.classList.add('space');
+                if (i < properties.length) {
+                    spaceEl.textContent = properties[i].name;
+                } else if (i === 10) {
+                    spaceEl.textContent = "Sorte/Revés";
+                } else {
+                    spaceEl.textContent = "Início";
+                }
+                boardEl.appendChild(spaceEl);
+            }
+        }
+
+        function rollDice() {
+            return Math.floor(Math.random() * 6) + 1;
+        }
+
+        function movePlayer(spaces) {
+            if (currentPlayer === 1) {
+                player1Position = (player1Position + spaces) % 12;
+                return player1Position;
+            } else {
+                player2Position = (player2Position + spaces) % 12;
+                return player2Position;
+            }
+        }
+
+        function handleProperty(position) {
+            if (position < properties.length) {
+                const property = properties[position];
+                propertyInfoEl.innerHTML = `
+                    <h3>${property.name}</h3>
+                    <p>${property.info}</p>
+                    <p>Preço: ${property.price} Créditos de Carbono</p>
+                    <button onclick="buyProperty(${position})" class="btn">Comprar Propriedade</button>
+                `;
+            } else {
+                propertyInfoEl.innerHTML = '';
+            }
+        }
+
+        function buyProperty(position) {
+            const property = properties[position];
+            if (currentPlayer === 1 && player1Credits >= property.price) {
+                player1Credits -= property.price;
+                player1CreditsEl.textContent = player1Credits;
+                propertyInfoEl.innerHTML = `<p>Você comprou ${property.name}!</p>`;
+            } else if (currentPlayer === 2 && player2Credits >= property.price) {
+                player2Credits -= property.price;
+                player2CreditsEl.textContent = player2Credits;
+                propertyInfoEl.innerHTML = `<p>Você comprou ${property.name}!</p>`;
+            } else {
+                propertyInfoEl.innerHTML = `<p>Você não tem Créditos de Carbono suficientes para comprar esta propriedade.</p>`;
+            }
+            endTurnBtn.style.display = 'inline-block';
+        }
+
+        function drawCard() {
+            const card = cards[Math.floor(Math.random() * cards.length)];
+            cardInfoEl.innerHTML = `
+                <h3>${card.type === 'sorte' ? 'Carta de Sorte' : 'Carta de Revés'}</h3>
+                <p>${card.text}</p>
+            `;
+            if (currentPlayer === 1) {
+                player1Credits += card.effect;
+                player1CreditsEl.textContent = player1Credits;
+            } else {
+                player2Credits += card.effect;
+                player2CreditsEl.textContent = player2Credits;
+            }
+            endTurnBtn.style.display = 'inline-block';
+        }
+
+        rollDiceBtn.addEventListener('click', () => {
+            const diceResult = rollDice();
+            diceResultEl.textContent = `Você tirou ${diceResult} no dado.`;
+            const newPosition = movePlayer(diceResult);
+            if (newPosition === 10) {
+                drawCard();
+            } else {
+                handleProperty(newPosition);
+            }
+            rollDiceBtn.style.display = 'none';
+            endTurnBtn.style.display = 'inline-block';
+        });
+
+        endTurnBtn.addEventListener('click', () => {
+            currentPlayer = currentPlayer === 1 ? 2 : 1;
+            propertyInfoEl.innerHTML = '';
+            cardInfoEl.innerHTML = '';
+            diceResultEl.textContent = '';
+            rollDiceBtn.style.display = 'inline-block';
+            endTurnBtn.style.display = 'none';
+        });
+
+        createBoard();
+    </script>
+</body>
+</html>
